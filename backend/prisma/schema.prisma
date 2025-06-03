@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role
+  school    String
+  courses   Course[] @relation("FacultyCourses")
+  registrations Registration[]
+  preRegistrations PreRegistration[] @relation("StudentPreRegistrations")
+}
+
+model Course {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  title     String
+  ltpc      String
+  programme String
+  faculty   User     @relation("FacultyCourses", fields: [facultyId], references: [id])
+  facultyId Int
+  slot      Slot     @default(NS)
+  school    String
+  approvedByChair Boolean @default(false)
+  preRegistrations PreRegistration[]
+  registrations Registration[]
+}
+
+model PreRegistration {
+  id        Int    @id @default(autoincrement())
+  student   User   @relation("StudentPreRegistrations", fields: [studentId], references: [id])
+  studentId Int
+  course    Course @relation(fields: [courseId], references: [id])
+  courseId  Int
+  status    PreRegStatus @default(pending)
+  createdAt DateTime @default(now())
+}
+
+model Registration {
+  id        Int    @id @default(autoincrement())
+  student   User   @relation(fields: [studentId], references: [id])
+  studentId Int
+  course    Course @relation(fields: [courseId], references: [id])
+  courseId  Int
+  faculty   User   @relation(fields: [facultyId], references: [id])
+  facultyId Int
+  status    RegStatus @default(registered)
+  semester  String
+  grade     String?
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  student
+  faculty
+  chairperson
+  admin
+}
+
+enum Slot {
+  A B C D E F G H FS1 FS2 NS
+}
+
+enum PreRegStatus {
+  pending
+  approved
+  rejected
+}
+
+enum RegStatus {
+  registered
+  dropped
+  completed
+}
